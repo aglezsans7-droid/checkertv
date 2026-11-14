@@ -604,10 +604,11 @@
         
         if(!menu.classList.contains('hidden')) {
             if(isIOS) {
-                // Si es iPhone, ocultamos VLC y MX, y explicamos cómo copiar
-                document.getElementById('linkVLC').style.display = 'none';
+                // iPhone: VLC se abre con su esquema vlc:// y la URL original (sin proxy)
+                document.getElementById('linkVLC').style.display = 'block';
+                document.getElementById('linkVLC').href = 'vlc://' + currentStreamUrl;
                 document.getElementById('linkMX').style.display = 'none';
-                document.getElementById('externalHelpText').innerHTML = 'En iPhone, copia el enlace y pégalo manualmente en VLC o tu reproductor favorito:';
+                document.getElementById('externalHelpText').innerHTML = 'Toca para abrir el canal en la app VLC (debe estar instalada):';
             } else {
                 // Si es Android, mostramos los intentos de VLC y MX
                 document.getElementById('linkVLC').style.display = 'block';
