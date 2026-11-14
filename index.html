@@ -9,9 +9,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="IPTV Checker">
     <meta name="format-detection" content="telephone=no">
-	<link rel="apple-touch-icon" href="apple-touch-icon.png">   
-	<link rel="manifest" href="manifest.json">
-	<title>IPTV Checker by Anna</title>
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#10141f">
+    <title>IPTV Checker by Anna</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
@@ -315,6 +316,11 @@
     let baseUrl = ""; 
     let currentStreamUrl = ""; 
 
+    // 🌐 URL de tu Worker de Cloudflare (déjala tal cual si no usas proxy)
+    const PROXY_URL = "https://checker.aglezsan.workers.dev/?url=";
+    const prox = (u) => (PROXY_URL.includes("TU-WORKER") || !u) ? u : PROXY_URL + encodeURIComponent(u);
+    const apiGet = (u) => axios.get(prox(u));
+
     // Detector de iOS (iPhone/iPad)
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -399,9 +405,9 @@
 
             const apiUrl = `${panelBase}/player_api.php?username=${username}&password=${password}`;
             const results = await Promise.allSettled([
-                axios.get(apiUrl), axios.get(`${apiUrl}&action=get_live_categories`), axios.get(`${apiUrl}&action=get_live_streams`),
-                axios.get(`${apiUrl}&action=get_vod_categories`), axios.get(`${apiUrl}&action=get_vod_streams`),
-                axios.get(`${apiUrl}&action=get_series_categories`), axios.get(`${apiUrl}&action=get_series`)
+                apiGet(apiUrl), apiGet(`${apiUrl}&action=get_live_categories`), apiGet(`${apiUrl}&action=get_live_streams`),
+                apiGet(`${apiUrl}&action=get_vod_categories`), apiGet(`${apiUrl}&action=get_vod_streams`),
+                apiGet(`${apiUrl}&action=get_series_categories`), apiGet(`${apiUrl}&action=get_series`)
             ]);
 
             const getData = (index, isArray = true) => {
@@ -517,15 +523,15 @@
         if (Hls.isSupported() && streamUrl.includes('.m3u8')) {
             if (hls) { hls.destroy(); }
             hls = new Hls();
-            hls.loadSource(streamUrl);
+            hls.loadSource(prox(streamUrl));
             hls.attachMedia(video);
             hls.on(Hls.Events.ERROR, function (event, data) { if (data.fatal) videoError.classList.remove('hidden'); });
         } else if (video.canPlayType('application/vnd.apple.mpegurl') && streamUrl.includes('.m3u8')) {
             // Reproducción nativa (Safari/iOS)
-            video.src = streamUrl;
+            video.src = prox(streamUrl);
             video.onerror = function() { videoError.classList.remove('hidden'); };
         } else if (streamUrl) {
-            video.src = streamUrl;
+            video.src = prox(streamUrl);
             video.onerror = function() { videoError.classList.remove('hidden'); };
         }
     }
@@ -552,7 +558,7 @@
         episodeList.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:13px;">Cargando episodios...</p>';
 
         try {
-            const res = await axios.get(`${baseUrl}/player_api.php?username=${cuentaActual.usuario}&password=${cuentaActual.password}&action=get_series_info&series_id=${seriesId}`);
+            const res = await apiGet(`${baseUrl}/player_api.php?username=${cuentaActual.usuario}&password=${cuentaActual.password}&action=get_series_info&series_id=${seriesId}`);
             const info = res.data;
             episodeList.innerHTML = '';
 
@@ -575,7 +581,7 @@
                             document.getElementById('externalMenu').classList.add('hidden');
                             
                             const video = document.getElementById('videoPlayer');
-                            video.src = epUrl;
+                            video.src = prox(epUrl);
                             video.onerror = function() { document.getElementById('videoError').classList.remove('hidden'); };
                         };
                         episodeList.appendChild(epDiv);
